@@ -19,3 +19,4 @@ rollup.config-dev.js
 webpack.dev.js
 
 .env
+token.txt
