@@ -20,3 +20,4 @@ webpack.dev.js
 
 .env
 token.txt
+characterMap.json

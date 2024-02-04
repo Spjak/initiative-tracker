@@ -6,6 +6,7 @@ const app = express()
 app.use(cors())
 
 const token = fs.readFileSync('token.txt')
+const characters = JSON.parse(fs.readFileSync('characterMap.json'))
 
 /*function getTotalModifierValue(groupedModifiers, type, subType) {
     let modifiers = getModifiersByType(groupedModifiers, type, subType);
@@ -19,14 +20,10 @@ function getConstitution(character) {
 }
 
 function getIdFromName(characterName) {
-    switch (characterName) {
-        case 'Meikas':
-            return 35830440
-            break;
-    
-        default:
-            break;
+    if (characters[characterName]) {
+        return characters[characterName]
     }
+    else return null
 }
 
 function calcMaxHp(character) {
@@ -81,8 +78,12 @@ async function getHp(characterId) {
 }
 
 app.get('/characters/:characterName/hp', async function (req, res) {
-    let hp = await getHp(getIdFromName(req.params.characterName))
-    res.send(hp)
+    let id = getIdFromName(req.params.characterName)
+    if (id) {
+        let hp = await getHp(id)
+        res.send(hp)
+    }
+    else res.sendStatus(404)
 })
 
 app.listen(3000)
