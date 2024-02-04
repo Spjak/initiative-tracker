@@ -378,7 +378,7 @@ function createTracker() {
                     if (change.max) {
                         creature.current_max = Math.max(
                             0,
-                            creature.current_max + change.max
+                            change.max
                         );
                         if (
                             creature.hp >= creature.current_max &&
@@ -387,7 +387,7 @@ function createTracker() {
                             creature.hp = creature.current_max;
                         }
                     }
-                    if (change.temp) {
+                    if (!isNaN(Number(change.temp))) {
                         let baseline = 0;
                         if (_settings.additiveTemp) {
                             baseline = creature.temp;
@@ -400,7 +400,7 @@ function createTracker() {
                         } else {
                             creature.temp = Math.max(
                                 0,
-                                creature.temp + change.temp
+                                change.temp
                             );
                         }
                     }
