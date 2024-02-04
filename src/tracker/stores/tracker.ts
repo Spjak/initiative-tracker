@@ -345,9 +345,17 @@ function createTracker() {
     return {
         getHpFromWeb: async (player: string) => {
             console.log("Getting hp")
-            let res = await axios.get(`http://localhost:3000/characters/${player}/hp`, {})
-            console.log(JSON.stringify(res.data))
-            return res.data
+            try {
+                let res = await axios.get(`http://localhost:3000/characters/${player}/hp`, {})
+                if (res.status == 200) {
+                    console.log(JSON.stringify(res.data))
+                    return res.data
+                }
+            }
+            catch(err: any) {
+                console.log(`Error getting hp with error ${err}`)
+                return null
+            }
         },
 
         subscribe,
