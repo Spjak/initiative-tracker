@@ -26,6 +26,7 @@ import type {
     DifficultyLevel,
     DifficultyThreshold
 } from "src/utils/rpg-system";
+const axios = require('axios').default;
 
 type HPUpdate = {
     saved: boolean;
@@ -344,6 +345,13 @@ function createTracker() {
     }
 
     return {
+        getHpFromWeb: async (player: string) => {
+            console.log("Getting hp")
+            let res = await axios.get(`http://localhost:3000/characters/${player}/hp`, {})
+            console.log(JSON.stringify(res.data))
+            return res.data
+        },
+
         subscribe,
         set,
 
