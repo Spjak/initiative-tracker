@@ -40,8 +40,10 @@
                     .setTitle("Sync HP from Beyond")
                     .onClick(async (e: MouseEvent) => {
                         let hpStats = await tracker.getHpFromWeb(creature.name)
-                        console.log(`Received hp: ${JSON.stringify(hpStats)}`)
-                        tracker.updateCreatureByName(creature.name, { hp: hpStats.currentHp, max: hpStats.maxHp, temp: hpStats.tempHp })
+                        if (hpStats) {
+                            console.log(`Received hp: ${JSON.stringify(hpStats)}`)
+                            tracker.updateCreatureByName(creature.name, { hp: hpStats.currentHp, max: hpStats.maxHp, temp: hpStats.tempHp })
+                        }
                     })
             })
             if (creature.current_ac != creature.ac) {
