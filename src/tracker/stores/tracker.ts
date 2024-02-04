@@ -295,7 +295,8 @@ function createTracker() {
             const creature = list[i];
             if (
                 creature.player ||
-                list.filter((c) => c.name == creature.name).length == 1
+                list.filter((c) => c.name == creature.name).length == 1 || 
+                list.filter((c) => c.display == creature.display).length == 1
             ) {
                 continue;
             }
