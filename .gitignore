@@ -20,4 +20,5 @@ webpack.dev.js
 
 .env
 token.txt
+session.txt
 characterMap.json

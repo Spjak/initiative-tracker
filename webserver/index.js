@@ -5,7 +5,9 @@ const fs = require('fs')
 const app = express()
 app.use(cors())
 
-const token = fs.readFileSync('token.txt')
+let token = fs.readFileSync('token.txt')
+let token_expiry = Date.now()
+const session = fs.readFileSync('session.txt')
 const characters = JSON.parse(fs.readFileSync('characterMap.json'))
 
 /*function getTotalModifierValue(groupedModifiers, type, subType) {
@@ -62,9 +64,10 @@ function calcMaxHp(character) {
 
 async function getHp(characterId) {
     console.log("Getting hp")
+    const t = await getToken()
     let res = await axios.get(`https://character-service.dndbeyond.com/character/v5/character/${characterId}`, {
         headers: {
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${t}`
         }
     })
     console.log(res.status)
@@ -75,6 +78,21 @@ async function getHp(characterId) {
     let maxhp = calcMaxHp(data)
     let currentHp = maxhp - data.removedHitPoints
     return {maxHp: maxhp, currentHp: currentHp, tempHp: data.temporaryHitPoints }
+}
+
+async function getToken() {
+    if (Date.now() > token_expiry) {
+        console.log("Getting new token")
+        let res = await axios.post(`https://auth-service.dndbeyond.com/v1/cobalt-token`, {}, {
+            withCredentials: true,
+            headers: {
+                Cookie: `CobaltSession=${session.toString()}; User.ID=100970159; User.Username=spjak; cobalt-token=${token.toString()}`
+            }
+        })
+        token_expiry = Date.now() + res.data.ttl * 1000
+        token = res.data.token
+    }
+    return token
 }
 
 app.get('/characters/:characterName/hp', async function (req, res) {
