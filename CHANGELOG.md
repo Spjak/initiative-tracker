@@ -2,6 +2,122 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [13.0.12](https://github.com/javalent/initiative-tracker/compare/13.0.11...13.0.12) (2024-06-02)
+
+
+### Bug Fixes
+
+* Fixes PF2e system difficulty threshold calculation ([bc8ebad](https://github.com/javalent/initiative-tracker/commit/bc8ebad7fa458dec34fbca733ba06adb1c5527c3))
+* Fixes status descriptions displaying "null" if no description was set ([d1c44f6](https://github.com/javalent/initiative-tracker/commit/d1c44f625c2d7f57d66319336e010fce6b53979f))
+* Fixes Statuses not being logged correctly when starting a log file ([82a8faf](https://github.com/javalent/initiative-tracker/commit/82a8faf42b851500a584a1ea47889c1f7703b163))
+* Starting a new encounter from an Encounter block now correctly creates a new log file ([c6756ce](https://github.com/javalent/initiative-tracker/commit/c6756cec4cb0c3a33e4a8d86b9abc011b9556f23))
+
+## [13.0.11](https://github.com/javalent/initiative-tracker/compare/13.0.10...13.0.11) (2024-05-09)
+
+
+### Bug Fixes
+
+* Check for Statblock-style links and transform them before parsing the `statblock-link` property ([8bc3ae5](https://github.com/javalent/initiative-tracker/commit/8bc3ae56bee16176e209c2e70b734e39f1285154))
+* Fixes error where values specified as a list in a creature were not being filtered correctly in the encounter builder ([a395715](https://github.com/javalent/initiative-tracker/commit/a3957151c2e041bbf62607cade6a3a0c335ed616))
+* Normalize derived options in Encounter Builder options filters ([27c4d92](https://github.com/javalent/initiative-tracker/commit/27c4d92fc7e95e4ae10502dc17744b0931822c55))
+
+## [13.0.10](https://github.com/javalent/initiative-tracker/compare/13.0.9...13.0.10) (2024-05-02)
+
+
+### Bug Fixes
+
+* Creatures not in bestiary now render correctly in Combatant ([cebb672](https://github.com/javalent/initiative-tracker/commit/cebb672bedbce29cb8208d2dc9a7afdb33d276d2))
+
+## [13.0.9](https://github.com/javalent/initiative-tracker/compare/13.0.8...13.0.9) (2024-05-01)
+
+
+### Bug Fixes
+
+* If an existing player view is found, reveal it ([2dda097](https://github.com/javalent/initiative-tracker/commit/2dda0978fe38cba9f7cdc82e0eff144ad104181b))
+* Properly check for settings being initialized in the tracker before attempting to access data ([e7b4bd2](https://github.com/javalent/initiative-tracker/commit/e7b4bd242ea4cdecc7098b75032d183ee5c53a9f))
+
+## [13.0.8](https://github.com/javalent/initiative-tracker/compare/13.0.7...13.0.8) (2024-04-28)
+
+
+### Bug Fixes
+
+* Fixes issue preventing encounter builder filters to open if an Options filter was present ([d2a5c03](https://github.com/javalent/initiative-tracker/commit/d2a5c03f046d84cbc1accee97032572231bcc77a))
+
+## [13.0.7](https://github.com/javalent/initiative-tracker/compare/13.0.6...13.0.7) (2024-04-27)
+
+
+### Bug Fixes
+
+* Removes outdated message about Fantasy Statblocks compatibility ([8e85b58](https://github.com/javalent/initiative-tracker/commit/8e85b5878eba3efc75046bf110d6c70844d92f7a))
+
+## [13.0.6](https://github.com/javalent/initiative-tracker/compare/13.0.5...13.0.6) (2024-04-23)
+
+
+### Bug Fixes
+
+* Remove obsidian-overload package ([775fe52](https://github.com/javalent/initiative-tracker/commit/775fe523d0717708bbad329d2c8ce50890dbbf3c))
+* Switch to `[@javalent](https://github.com/javalent)` scoped FS module ([c8eeb33](https://github.com/javalent/initiative-tracker/commit/c8eeb33756aa988057988684a5c3bcf09eaeaa1a))
+
+## [13.0.5](https://github.com/javalent/initiative-tracker/compare/13.0.4...13.0.5) (2024-04-15)
+
+
+### Bug Fixes
+
+* Encounter blocks will less greedily add the default party if players are explicitly defined ([eb4a59a](https://github.com/javalent/initiative-tracker/commit/eb4a59a5d1becda8ba659abe6238e0470ae7d987))
+* Encounters copied from the Encounter Builder no longer include disabled players in the output (close [#265](https://github.com/javalent/initiative-tracker/issues/265)) ([fd045ac](https://github.com/javalent/initiative-tracker/commit/fd045ac75bf9acf731bf3876cac9f757191e48ec))
+
+## [13.0.4](https://github.com/javalent/initiative-tracker/compare/13.0.3...13.0.4) (2024-03-23)
+
+
+### Bug Fixes
+
+* Fixes load encounter submenu on mobile ([e6f33ac](https://github.com/javalent/initiative-tracker/commit/e6f33ac64ef532de5c894930cc4626bd26d67a2b))
+
+## [13.0.3](https://github.com/javalent/initiative-tracker/compare/13.0.2...13.0.3) (2024-03-22)
+
+
+### Bug Fixes
+
+* Fixes IT menus on mobile ([bfb2312](https://github.com/javalent/initiative-tracker/commit/bfb23123445362eb37010276729009adbfeddadd))
+* Improves Add Creature experience on mobile ([5a20e10](https://github.com/javalent/initiative-tracker/commit/5a20e105f74079ce271ccf3a63e0c4546d71555c))
+* Removes legacy creator option ([d8f6cdb](https://github.com/javalent/initiative-tracker/commit/d8f6cdb2b31fd2b0cf88e7e449079bab8fd21916))
+* Slightly decreases font size on mobile for better readability ([54abd6f](https://github.com/javalent/initiative-tracker/commit/54abd6f94a1df1b4f89a701af5d7f4cecce06b2f))
+
+## [13.0.2](https://github.com/javalent/initiative-tracker/compare/13.0.1...13.0.2) (2024-03-15)
+
+
+### Bug Fixes
+
+* Fixes Condition suggester not appearing ([aa2384b](https://github.com/javalent/initiative-tracker/commit/aa2384b75c60c524c889a212204db8406f8a8ef1))
+
+## [13.0.1](https://github.com/javalent/initiative-tracker/compare/13.0.0...13.0.1) (2024-03-08)
+
+
+### Bug Fixes
+
+* Improves Fantasy Statblocks bestiary resolution behavior ([a1a3d07](https://github.com/javalent/initiative-tracker/commit/a1a3d075c973953202c611fdb22b9979215105f6))
+* Properly unload FS resolve event ([17aa794](https://github.com/javalent/initiative-tracker/commit/17aa79472190defcf684fb333fea852b9ccce694))
+
+## [13.0.0](https://github.com/javalent/initiative-tracker/compare/12.5.0...13.0.0) (2024-03-05)
+
+
+### ⚠ BREAKING CHANGES
+
+* switch to new Fantasy Statblocks API
+
+### Features
+
+* Switch to Fantasy Statblocks API ([a993447](https://github.com/javalent/initiative-tracker/commit/a993447c948596f59e3a426bb4dc824ba4625dfd))
+* switch to new Fantasy Statblocks API ([28c8363](https://github.com/javalent/initiative-tracker/commit/28c836321dd5432f8c830b4c5a2c1a8ddeb7229f))
+
+
+### Bug Fixes
+
+* No longer unload views when plugin is unloaded ([fedc639](https://github.com/javalent/initiative-tracker/commit/fedc6397c9b2f49477fb0bb1f557778c9e16794f))
+* Notify users of new FS version requirement. ([9ea056e](https://github.com/javalent/initiative-tracker/commit/9ea056e93fc379623b5bed191bc96a482ce96ba8))
+* remove logs ([f84a61c](https://github.com/javalent/initiative-tracker/commit/f84a61c1433752164022fa5d91c8c7df9cbcee91))
+* Switch to centrally managed input suggesters ([f5e536e](https://github.com/javalent/initiative-tracker/commit/f5e536ee2b4abe73c9b6268aac9c517cf2bfe8b7))
+
 ## [12.5.0](https://github.com/javalent/initiative-tracker/compare/12.4.5...12.5.0) (2024-02-01)
 
 

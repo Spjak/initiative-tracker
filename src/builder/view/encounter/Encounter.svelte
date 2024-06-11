@@ -15,9 +15,8 @@
     import { START_ENCOUNTER } from "src/utils";
     import { getContext } from "svelte";
     import { tracker } from "src/tracker/stores/tracker";
-    import type { CreatureState } from "index";
+    import type { CreatureState, SRDMonster } from "src/types/creatures";
     import { writable } from "svelte/store";
-    import type { SRDMonster } from "obsidian-overload";
 
     const { players } = encounter;
 
@@ -80,6 +79,7 @@
                     round: 1,
                     state: false,
                     logFile: null,
+                    newLog: true,
                     roll: true,
                     rollHP
                 });
@@ -241,7 +241,7 @@
             enc.name = $name;
         }
         if ($players?.length) {
-            enc.players = $players.map((p) => p.name);
+            enc.players = $players.filter((p) => p.enabled).map((p) => p.name);
         }
         if ($encounter?.size) {
             enc.creatures = [...$encounter.entries()].map(([c, v]) => {

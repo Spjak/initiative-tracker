@@ -4,11 +4,11 @@
 
     import { Creature } from "src/utils/creature";
     import type InitiativeTracker from "src/main";
-    import type { StackRoller } from "../../../../obsidian-dice-roller/src/roller";
     import { tracker } from "src/tracker/stores/tracker";
-    import type { CreatureState } from "index";
+    import type { CreatureState } from "src/types/creatures";
     import CreatureComponent from "./Creature.svelte";
     import { setContext } from "svelte";
+    import type { StackRoller } from "@javalent/dice-roller";
 
     export let plugin: InitiativeTracker;
 
@@ -18,6 +18,7 @@
     export let creatures: Map<Creature, number | string> = new Map();
     export let players: string[];
     export let party: string = null;
+
     export let hide: string[] = [];
 
     export let rollHP: boolean = plugin.data.rollHP;
@@ -65,9 +66,10 @@
             .flat();
         const transformedCreatures: CreatureState[] = [];
         const combinedPlayers = [
-            ...plugin.getPlayerNamesForParty(party),
+            ...(party ? plugin.getPlayerNamesForParty(party) : []),
             ...players
         ];
+
         const playersForEncounter: Creature[] = [];
         for (const name of new Set(combinedPlayers)) {
             playersForEncounter.push(plugin.getPlayerByName(name));
@@ -83,7 +85,8 @@
             state: false,
             logFile: null,
             roll: true,
-            rollHP
+            rollHP,
+            newLog: true
         });
         plugin.app.workspace.revealLeaf(view.leaf);
     };

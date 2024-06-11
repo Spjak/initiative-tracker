@@ -9,13 +9,10 @@ import {
 } from "svelte/store";
 import { equivalent } from "../../encounter";
 import { Events, Platform, TFile } from "obsidian";
-import type {
-    Condition,
-    InitiativeTrackerData,
-    InitiativeViewState,
-    UpdateLogMessage
-} from "../../../index";
-import type { StackRoller } from "obsidian-overload";
+import type { UpdateLogMessage } from "src/logger/logger.types";
+import type { Condition } from "src/types/creatures";
+import type { InitiativeTrackerData } from "src/settings/settings.types";
+import type { InitiativeViewState } from "../view.types";
 import {
     OVERFLOW_TYPE,
     RollPlayerInitiativeBehavior,
@@ -26,6 +23,7 @@ import type {
     DifficultyLevel,
     DifficultyThreshold
 } from "src/utils/rpg-system";
+import type { StackRoller } from "@javalent/dice-roller";
 const axios = require('axios').default;
 
 type HPUpdate = {
@@ -97,10 +95,10 @@ function createTracker() {
     const descending = derived(data, (data) => {
         return data.descending;
     });
-    let _settings: InitiativeTrackerData;
+    let _settings: InitiativeTrackerData | null;
 
     const condensed = derived(creatures, (values) => {
-        if (_settings.condense) {
+        if (_settings?.condense) {
             values.forEach((creature, _, arr) => {
                 const equiv = arr.filter((c) => equivalent(c, creature));
                 const initiatives = equiv.map((i) => i.initiative);
@@ -810,7 +808,7 @@ function createTracker() {
                         $logFile.set(_logger.getFile());
                     });
                 }
-                if (!state && _logger) {
+                if (!state && _logger || state?.newLog) {
                     _logger.logging = false;
                     $logFile.set(null);
                 }

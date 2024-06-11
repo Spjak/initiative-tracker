@@ -12,11 +12,8 @@ import {
 
 import type InitiativeTracker from "../main";
 
-import {
-    FileSuggestionModal,
-    FolderSuggestionModal,
-    PlayerSuggestionModal
-} from "../utils/suggester";
+import { PlayerSuggestionModal } from "../utils/suggester";
+import { FileInputSuggest, FolderInputSuggest } from "obsidian-utilities";
 import {
     AC,
     Conditions,
@@ -26,7 +23,10 @@ import {
     INITIATIVE
 } from "../utils";
 import { RpgSystemSetting, getRpgSystem } from "../utils/rpg-system";
-import type { Condition, HomebrewCreature, InputValidate, Party } from "index";
+import type { Party } from "./settings.types";
+import type { InputValidate } from "./settings.types";
+import type { Condition } from "src/types/creatures";
+import type { HomebrewCreature } from "src/types/creatures";
 
 export default class InitiativeTrackerSettings extends PluginSettingTab {
     constructor(private plugin: InitiativeTracker) {
@@ -169,15 +169,7 @@ export default class InitiativeTrackerSettings extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 });
             });
-        new Setting(containerEl)
-            .setName("Use Legacy 'Add Creatures'")
-            .setDesc("Use the legacy way to add creatures.")
-            .addToggle((t) => {
-                t.setValue(this.plugin.data.useLegacy).onChange(async (v) => {
-                    this.plugin.data.useLegacy = v;
-                    await this.plugin.saveSettings();
-                });
-            });
+
         new Setting(containerEl)
             .setName("Embed statblock-link content in the Creature View")
             .setDesc(
@@ -326,19 +318,16 @@ export default class InitiativeTrackerSettings extends PluginSettingTab {
                 let folders = this.app.vault
                     .getAllLoadedFiles()
                     .filter((f) => f instanceof TFolder);
-                const modal = new FolderSuggestionModal(
+                const modal = new FolderInputSuggest(
                     this.app,
                     t,
                     folders as TFolder[]
                 );
-                modal.onClose = t.inputEl.onblur = async () => {
-                    const v = t.inputEl.value?.trim()
-                        ? t.inputEl.value.trim()
-                        : "/";
-                    this.plugin.data.logFolder = normalizePath(v);
+                modal.onSelect(async ({ item }) => {
+                    this.plugin.data.logFolder = normalizePath(item.path);
                     await this.plugin.saveSettings();
                     this.display();
-                };
+                });
             });
     }
     private _displayPlayers(additionalContainer: HTMLDetailsElement) {
@@ -458,10 +447,6 @@ export default class InitiativeTrackerSettings extends PluginSettingTab {
                             await this.plugin.updatePlayer(
                                 player,
                                 modal.player
-                            );
-                            this.plugin.app.workspace.trigger(
-                                "initiative-tracker:creature-updated-in-settings",
-                                player
                             );
 
                             this._displayPlayers(additionalContainer);
@@ -880,7 +865,7 @@ export default class InitiativeTrackerSettings extends PluginSettingTab {
                         }
                     })
                 )
-                .setDesc(status.description)
+                .setDesc(status.description ?? "")
                 .addExtraButton((b) =>
                     b.setIcon("pencil").onClick(() => {
                         const modal = new StatusModal(this.plugin, status);
@@ -1070,16 +1055,16 @@ class NewPlayerModal extends Modal {
             .setDesc("Link player to a note in your vault.")
             .addText((t) => {
                 t.setValue(this.player.note ?? "");
-                const modal = new FileSuggestionModal(this.app, t);
-                modal.onClose = async () => {
-                    if (!modal.file) return;
-                    const metaData = this.app.metadataCache.getFileCache(
-                        modal.file
-                    );
 
-                    this.player.note = modal.file.basename;
-                    this.player.path = modal.file.path;
-                    this.player.name = modal.file.basename;
+                let files = this.app.vault.getFiles();
+                const modal = new FileInputSuggest(this.app, t, files);
+                modal.onSelect(async ({ item: file }) => {
+                    if (!file) return;
+                    const metaData = this.app.metadataCache.getFileCache(file);
+
+                    this.player.note = file.basename;
+                    this.player.path = file.path;
+                    this.player.name = file.basename;
 
                     if (!metaData || !metaData.frontmatter) return;
                     const { ac, hp, modifier, level, name } =
@@ -1092,7 +1077,7 @@ class NewPlayerModal extends Modal {
                     this.player["statblock-link"] =
                         metaData.frontmatter["statblock-link"];
                     this.display();
-                };
+                });
             });
 
         let nameInput: InputValidate,
@@ -1472,7 +1457,12 @@ class PartyModal extends Modal {
             .setName("Add Player to Party")
             .addText((t) => {
                 playerText = t;
-                new PlayerSuggestionModal(this.plugin, t, this.party);
+                const modal = new PlayerSuggestionModal(this.plugin.app, t, [
+                    ...this.plugin.players.values()
+                ]).onSelect(({ item }) => {
+                    t.setValue(item.name);
+                    modal.close();
+                });
             })
             .addExtraButton((b) =>
                 b.setIcon("plus-with-circle").onClick(() => {

@@ -5,7 +5,7 @@ import { BUILDER_VIEW } from "../utils";
 import Builder from "./view/Builder.svelte";
 import { encounter } from "./stores/encounter";
 import { get } from "svelte/store";
-import type { SRDMonster } from "obsidian-overload";
+import type { SRDMonster } from "src/types/creatures";
 
 interface BuilderContext {
     plugin: InitiativeTracker;
@@ -37,15 +37,39 @@ export default class BuilderView extends ItemView {
     }
     ui: Builder;
     async onOpen() {
-        this.ui = new Builder({
-            target: this.contentEl,
-            props: {
-                plugin: this.plugin
-            }
-        });
+        if (
+            this.plugin.canUseStatBlocks &&
+            !window["FantasyStatblocks"].isResolved()
+        ) {
+            this.contentEl.addClasses(["waiting-for-bestiary", "is-loading"]);
+            const loading = this.contentEl.createEl("p", {
+                text: "Waiting for Fantasy Statblocks Bestiary..."
+            });
+            const unload = window["FantasyStatblocks"].onResolved(() => {
+                this.contentEl.removeClasses([
+                    "waiting-for-bestiary",
+                    "is-loading"
+                ]);
+                loading.detach();
+                this.ui = new Builder({
+                    target: this.contentEl,
+                    props: {
+                        plugin: this.plugin
+                    }
+                });
+                unload();
+            });
+        } else {
+            this.ui = new Builder({
+                target: this.contentEl,
+                props: {
+                    plugin: this.plugin
+                }
+            });
+        }
     }
     async onClose() {
-        this.ui.$destroy();
+        this.ui?.$destroy();
     }
     getDisplayText(): string {
         return "Encounter Builder";

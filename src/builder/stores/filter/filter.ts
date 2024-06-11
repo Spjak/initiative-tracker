@@ -1,5 +1,5 @@
 import copy from "fast-copy";
-import type { SRDMonster } from "index";
+import type { SRDMonster } from "src/types/creatures";
 import { prepareSimpleSearch, type SearchResult } from "obsidian";
 import type InitiativeTracker from "src/main";
 import { convertFraction } from "src/utils";
@@ -96,7 +96,7 @@ const createRangeFilter: FilterFactory<RangeFilter> = (filter) => {
 
         reset: () => set([...filter.options]),
 
-        compare: (value: number) => {
+        compare: (value: number | string) => {
             if (get(isDefault)) return true;
             const values = get(store);
             return (
@@ -109,6 +109,10 @@ const createRangeFilter: FilterFactory<RangeFilter> = (filter) => {
     };
 };
 
+function normalize(str: string): string {
+    if (typeof str !== "string") return str;
+    return str.toLowerCase();
+}
 const createOptionsFilter: FilterFactory<OptionsFilter> = (filter) => {
     const store = writable<string[]>([]);
     const { subscribe, set, update } = store;
@@ -122,10 +126,14 @@ const createOptionsFilter: FilterFactory<OptionsFilter> = (filter) => {
         subscribe,
         set,
         reset: () => set([]),
-        compare: (value: string) => {
+        compare: (value: number | string | Array<string>) => {
             if (get(isDefault)) return true;
+            if (typeof value === "number") return false;
             const values = get(store);
-            return values.includes(value);
+            if (Array.isArray(value)) {
+                return value.some((v) => values.includes(normalize(v)));
+            }
+            return values.includes(normalize(value));
         },
         update,
         filter,
@@ -149,8 +157,9 @@ const createStringFilter: FilterFactory<StringFilter> = (filter) => {
         subscribe,
         set,
         reset: () => set(DEFAULT_STRING),
-        compare: (value: string) => {
+        compare: (value: number | string) => {
             if (get(isDefault)) return true;
+            if (typeof value === "number") return false;
             return get(isDefault) || search(value) != null;
         },
         update,
@@ -209,7 +218,15 @@ function getDerivedFilterOptions(
                             break;
                         }
                         case FilterType.Options: {
-                            options.get(filter).add(creature[field]);
+                            if (Array.isArray(creature[field])) {
+                                for (const value of creature[field]) {
+                                    options.get(filter).add(normalize(value));
+                                }
+                            } else if (typeof creature[field] === "string") {
+                                options
+                                    .get(filter)
+                                    .add(normalize(creature[field]));
+                            }
                             break;
                         }
                         case FilterType.Search: {

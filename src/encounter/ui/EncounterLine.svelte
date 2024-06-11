@@ -5,8 +5,7 @@
     import { tracker } from "src/tracker/stores/tracker";
     import { START_ENCOUNTER } from "src/utils";
     import { Creature } from "src/utils/creature";
-
-    import type { StackRoller } from "../../../../obsidian-dice-roller/src/roller";
+    import type { StackRoller } from "@javalent/dice-roller";
     import { setContext } from "svelte";
 
     export let creatures: Map<Creature, number | string>;
@@ -56,7 +55,8 @@
             state: false,
             round: 1,
             logFile: null,
-            roll: true
+            newLog: true,
+            roll: true,
         });
         plugin.app.workspace.revealLeaf(view.leaf);
     };
@@ -121,20 +121,21 @@
     <span>
         {#if creatures.size}
             {#each [...creatures] as [creature, count], index}
-                <span aria-label={label(creature)}>
-                    {joiner(index, creatures.size)}
-                    <strong use:rollerEl={creature} />&nbsp;
-                    <span
+                <span aria-label={label(creature)}
+                    >{joiner(index, creatures.size)}<strong
+                        use:rollerEl={creature}
+                    /> <span
                         class="creature-name"
                         on:click={() => plugin.openCombatant(creature)}
-                    >
-                        {#if creature.display && creature.display != creature.name}
-                            {creature.display}{count == 1 ? "" : "s"} ({creature.name})
-                        {:else}
-                            {creature.name}{count == 1 ? "" : "s"}
-                        {/if}
-                    </span>
-                </span>
+                        >{#if creature.display && creature.display != creature.name}{creature.display}{count ==
+                            1
+                                ? ""
+                                : "s"} ({creature.name}){:else}{creature.name}{count ==
+                            1
+                                ? ""
+                                : "s"}{/if}</span
+                    ></span
+                >
             {/each}
         {:else}
             -

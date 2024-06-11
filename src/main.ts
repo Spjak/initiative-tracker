@@ -4,7 +4,8 @@ import {
     parseYaml,
     Plugin,
     TFile,
-    WorkspaceLeaf
+    WorkspaceLeaf,
+    setIcon
 } from "obsidian";
 
 import {
@@ -17,15 +18,10 @@ import {
 } from "./utils";
 
 import { PLAYER_VIEW_VIEW } from "./utils/constants";
-import type {
-    EventsOnArgs,
-    HomebrewCreature,
-    InitiativeTrackerData,
-    InitiativeViewState,
-    Party,
-    SRDMonster
-} from "../index";
-import type { Plugins, StackRoller } from "obsidian-overload";
+import type { InitiativeTrackerData } from "./settings/settings.types";
+import type { InitiativeViewState } from "./tracker/view.types";
+import type { HomebrewCreature } from "./types/creatures";
+import type { SRDMonster } from "./types/creatures";
 import InitiativeTrackerSettings from "./settings/settings";
 import { EncounterBlock, EncounterParser } from "./encounter";
 import EncounterLine from "./encounter/ui/EncounterLine.svelte";
@@ -36,30 +32,9 @@ import PlayerView from "./tracker/player-view";
 import { tracker } from "./tracker/stores/tracker";
 import { EncounterSuggester } from "./encounter/editor-suggestor";
 import { API } from "./api/api";
-declare module "obsidian" {
-    interface App {
-        plugins: {
-            getPlugin<T extends keyof Plugins>(plugin: T): Plugins[T];
-        };
-        commands: {
-            commands: { [id: string]: Command };
-            findCommand(id: string): Command;
-            executeCommandById(id: string): void;
-            listCommands(): Command[];
-        };
-    }
-    interface WorkspaceItem {
-        containerEl: HTMLElement;
-    }
-    interface Workspace {
-        on(...args: EventsOnArgs): EventRef;
-    }
 
-    interface MenuItem {
-        setSubmenu: () => Menu;
-        submenu: Menu;
-    }
-}
+import "@javalent/fantasy-statblocks";
+import type { StackRoller } from "@javalent/dice-roller";
 
 export default class InitiativeTracker extends Plugin {
     api = new API(this);
@@ -69,17 +44,12 @@ export default class InitiativeTracker extends Plugin {
     watchers: Map<TFile, HomebrewCreature> = new Map();
     getRoller(str: string) {
         if (!this.canUseDiceRoller) return;
-        const roller = this.app.plugins
-            .getPlugin("obsidian-dice-roller")
-            .getRollerSync(str, "statblock");
+        const roller = window.DiceRoller.getRollerSync(str, "statblock");
         return roller as StackRoller;
     }
     get canUseDiceRoller() {
-        if (this.app.plugins.getPlugin("obsidian-dice-roller") != null) {
-            if (
-                !this.app.plugins.getPlugin("obsidian-dice-roller")
-                    .getRollerSync
-            ) {
+        if (window.DiceRoller != null) {
+            if (!window.DiceRoller.getRollerSync) {
                 new Notice(
                     "Please update Dice Roller to the latest version to use with Initiative Tracker."
                 );
@@ -127,41 +97,18 @@ export default class InitiativeTracker extends Plugin {
         );
     }
 
-    get canUseStatBlocks() {
-        return this.app.plugins.getPlugin("obsidian-5e-statblocks") != null;
-    }
-    get statblocks() {
-        return this.app.plugins.getPlugin("obsidian-5e-statblocks");
+    get canUseStatBlocks(): boolean {
+        if (this.app.plugins.enabledPlugins.has("obsidian-5e-statblocks")) {
+            return (window["FantasyStatblocks"]?.getVersion()?.major ?? 0) >= 4;
+        }
+        return false;
     }
     get statblockVersion() {
-        return this.statblocks?.settings?.version ?? { major: 0 };
+        return window.FantasyStatblocks?.getVersion() ?? { major: 0 };
     }
-    get canUseLeaflet() {
-        return false;
-        /* return (
-            this.app.plugins.getPlugin("obsidian-leaflet-plugin") != null &&
-            Number(
-                this.app.plugins.getPlugin("obsidian-leaflet-plugin").data
-                    ?.version?.major >= 4
-            )
-        ); */
-    }
-
-    get leaflet() {
-        if (this.canUseLeaflet) {
-            return this.app.plugins.getPlugin("obsidian-leaflet-plugin");
-        }
-    }
-
     get statblock_creatures() {
-        if (!this.app.plugins.getPlugin("obsidian-5e-statblocks")) return [];
-        return [
-            ...Array.from(
-                this.app.plugins
-                    .getPlugin("obsidian-5e-statblocks")
-                    .bestiary?.values() ?? []
-            )
-        ] as SRDMonster[];
+        if (!window.FantasyStatblocks) return [];
+        return window.FantasyStatblocks.getBestiaryCreatures() as SRDMonster[];
     }
     get bestiary() {
         return this.statblock_creatures.filter(
@@ -206,13 +153,8 @@ export default class InitiativeTracker extends Plugin {
     }
 
     get bestiaryNames(): string[] {
-        if (!this.app.plugins.getPlugin("obsidian-5e-statblocks")) return [];
-        return (
-            (this.app.plugins
-                .getPlugin("obsidian-5e-statblocks")
-                //@ts-ignore
-                ?.getBestiaryNames() as string[]) ?? []
-        );
+        if (!window.FantasyStatblocks) return [];
+        return window.FantasyStatblocks.getBestiaryNames();
     }
     get view() {
         const leaves = this.app.workspace.getLeavesOfType(
@@ -235,11 +177,16 @@ export default class InitiativeTracker extends Plugin {
         return this.data.parties.find((p) => p.name == this.data.defaultParty);
     }
 
-    getBaseCreatureFromBestiary(name: string) {
+    getBaseCreatureFromBestiary(name: string): SRDMonster {
         /** Check statblocks */
         try {
-            if (this.canUseStatBlocks && this.statblocks.hasCreature(name)) {
-                return this.statblocks.getCreatureFromBestiary(name);
+            if (
+                this.canUseStatBlocks &&
+                window.FantasyStatblocks.hasCreature(name)
+            ) {
+                return window.FantasyStatblocks.getCreatureFromBestiary(
+                    name
+                ) as SRDMonster;
             }
         } catch (e) {}
         return null;
@@ -302,14 +249,58 @@ export default class InitiativeTracker extends Plugin {
 
         this.registerEditorSuggest(new EncounterSuggester(this));
         this.registerMarkdownCodeBlockProcessor("encounter", (src, el, ctx) => {
-            const handler = new EncounterBlock(this, src, el);
-            ctx.addChild(handler);
+            if (
+                this.canUseStatBlocks &&
+                !window["FantasyStatblocks"].isResolved()
+            ) {
+                el.addClasses(["waiting-for-bestiary", "is-loading"]);
+                const loading = el.createEl("p", {
+                    text: "Waiting for Fantasy Statblocks Bestiary..."
+                });
+                const unload = window["FantasyStatblocks"].onResolved(() => {
+                    el.removeClasses(["waiting-for-bestiary", "is-loading"]);
+                    loading.detach();
+                    const handler = new EncounterBlock(this, src, el);
+                    ctx.addChild(handler);
+                    unload();
+                });
+            } else {
+                const handler = new EncounterBlock(this, src, el);
+                ctx.addChild(handler);
+            }
         });
         this.registerMarkdownCodeBlockProcessor(
             "encounter-table",
             (src, el, ctx) => {
-                const handler = new EncounterBlock(this, src, el, true);
-                ctx.addChild(handler);
+                if (
+                    this.canUseStatBlocks &&
+                    !window["FantasyStatblocks"].isResolved()
+                ) {
+                    el.addClasses(["waiting-for-bestiary", "is-loading"]);
+                    const loading = el.createEl("p", {
+                        text: "Waiting for Fantasy Statblocks Bestiary..."
+                    });
+                    const unload = window["FantasyStatblocks"].onResolved(
+                        () => {
+                            el.removeClasses([
+                                "waiting-for-bestiary",
+                                "is-loading"
+                            ]);
+                            loading.detach();
+                            const handler = new EncounterBlock(
+                                this,
+                                src,
+                                el,
+                                true
+                            );
+                            ctx.addChild(handler);
+                            unload();
+                        }
+                    );
+                } else {
+                    const handler = new EncounterBlock(this, src, el, true);
+                    ctx.addChild(handler);
+                }
             }
         );
 
@@ -325,25 +316,71 @@ export default class InitiativeTracker extends Plugin {
             if (!codes.length) return;
 
             for (const code of codes) {
-                const definitions = code.innerText.replace(`encounter:`, "");
-
-                const creatures = parseYaml("[" + definitions.trim() + "]");
-                const parser = new EncounterParser(this);
-                const parsed = await parser.parse({ creatures });
-
-                if (!parsed || !parsed.creatures || !parsed.creatures.size)
-                    continue;
-
                 const target = createSpan("initiative-tracker-encounter-line");
-                new EncounterLine({
-                    target,
-                    props: {
-                        ...parsed,
-                        plugin: this
-                    }
-                });
 
                 code.replaceWith(target);
+
+                const buildEncounter = async () => {
+                    const definitions = code.innerText.replace(
+                        `encounter:`,
+                        ""
+                    );
+
+                    const creatures = parseYaml("[" + definitions.trim() + "]");
+                    const parser = new EncounterParser(this);
+                    const parsed = await parser.parse({ creatures });
+
+                    if (
+                        !parsed ||
+                        !parsed.creatures ||
+                        !parsed.creatures.size
+                    ) {
+                        target.setText("No creatures found.");
+                        return;
+                    }
+                    new EncounterLine({
+                        target,
+                        props: {
+                            ...parsed,
+                            plugin: this
+                        }
+                    });
+                };
+                if (
+                    this.canUseStatBlocks &&
+                    !window["FantasyStatblocks"].isResolved()
+                ) {
+                    const loading = target.createSpan(
+                        "waiting-for-bestiary inline"
+                    );
+                    const delay = Math.floor(200 * Math.random());
+
+                    setIcon(
+                        loading.createDiv({
+                            cls: "icon",
+                            attr: {
+                                style: `animation-delay: ${delay}ms`
+                            }
+                        }),
+                        "loader-2"
+                    );
+                    loading.createEl("em", {
+                        text: "Loading Bestiary..."
+                    });
+                    const unload = window["FantasyStatblocks"].onResolved(
+                        () => {
+                            el.removeClasses([
+                                "waiting-for-bestiary",
+                                "inline"
+                            ]);
+                            loading.detach();
+                            buildEncounter();
+                            unload();
+                        }
+                    );
+                } else {
+                    buildEncounter();
+                }
             }
         });
 
@@ -575,13 +612,7 @@ export default class InitiativeTracker extends Plugin {
 
     async onunload() {
         await this.saveSettings();
-        this.app.workspace.trigger("initiative-tracker:unload");
-        this.app.workspace
-            .getLeavesOfType(INITIATIVE_TRACKER_VIEW)
-            .forEach((leaf) => leaf.detach());
-        this.app.workspace
-            .getLeavesOfType(CREATURE_TRACKER_VIEW)
-            .forEach((leaf) => leaf.detach());
+        this.app.workspace.trigger("initiative-tracker:unloaded");
         console.log("Initiative Tracker unloaded");
     }
 

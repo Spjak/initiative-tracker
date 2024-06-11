@@ -62,13 +62,17 @@ export default class TrackerView extends ItemView {
     getExistingPlayerView(): PlayerView | undefined {
         const existing =
             this.plugin.app.workspace.getLeavesOfType(PLAYER_VIEW_VIEW);
+
         if (existing.length) {
             return existing[0].view as PlayerView;
         }
     }
     async getPlayerView(): Promise<PlayerView> {
         const existing = this.getExistingPlayerView();
-        if (existing) return existing;
+        if (existing) {
+            this.app.workspace.revealLeaf(existing.leaf);
+            return existing;
+        }
 
         const leaf = this.app.workspace.getLeaf("window");
         await leaf.setViewState({
@@ -98,7 +102,7 @@ export class CreatureView extends ItemView {
                     app.workspace.trigger(
                         "link-hover",
                         {}, //hover popover, but don't need
-                        ev.target, //targetEl
+                        ev.target as HTMLElement, //targetEl
                         (ev.target as HTMLAnchorElement).dataset.href, //linkText
                         "initiative-tracker " //source
                     ),
@@ -133,19 +137,15 @@ export class CreatureView extends ItemView {
             return;
         }
 
-        const tryStatblockPlugin =
-            this.plugin.canUseStatBlocks &&
-            this.plugin.statblockVersion?.major >= 2;
-
         if (
             creature["statblock-link"] &&
-            (this.plugin.data.preferStatblockLink || !tryStatblockPlugin)
+            (this.plugin.data.preferStatblockLink ||
+                !this.plugin.canUseStatBlocks)
         ) {
             await this.renderEmbed(creature.getStatblockLink());
-        } else if (tryStatblockPlugin) {
-            const statblock = this.plugin.statblocks.render(
-                //@ts-ignore
-                creature,
+        } else if (this.plugin.canUseStatBlocks) {
+            const statblock = window.FantasyStatblocks.render(
+                creature.creature,
                 this.statblockEl,
                 creature.display
             );
@@ -158,6 +158,12 @@ export class CreatureView extends ItemView {
     }
 
     async renderEmbed(embedLink: string) {
+        if (
+            this.plugin.canUseStatBlocks &&
+            window.FantasyStatblocks.isStatblockLink?.(embedLink)
+        ) {
+            embedLink = window.FantasyStatblocks.parseStatblockLink(embedLink);
+        }
         if (/\[.+\]\(.+\)/.test(embedLink)) {
             //md
             [, embedLink] = embedLink.match(/\[.+?\]\((.+?)\)/);
@@ -167,28 +173,32 @@ export class CreatureView extends ItemView {
         }
 
         const { path, subpath } = parseLinktext(embedLink);
+
         const file = this.app.metadataCache.getFirstLinkpathDest(path, "/");
-        const fileContent = await app.vault.cachedRead(file);
 
         let content = `Oops! Something is wrong with your statblock-link:<br />${embedLink}`;
-        if (subpath && fileContent) {
-            const cache = app.metadataCache.getFileCache(file);
-            const subpathResult = resolveSubpath(cache, subpath);
-            if (subpathResult) {
-                content = fileContent.slice(
-                    subpathResult.start.offset,
-                    subpathResult.end.offset
-                );
+        if (file) {
+            const fileContent = await this.app.vault.cachedRead(file);
+            if (subpath && fileContent) {
+                const cache = app.metadataCache.getFileCache(file);
+                const subpathResult = resolveSubpath(cache, subpath);
+                if (subpathResult) {
+                    content = fileContent.slice(
+                        subpathResult.start.offset,
+                        subpathResult.end.offset
+                    );
+                }
+            } else if (fileContent) {
+                content = fileContent;
             }
-        } else if (fileContent) {
-            content = fileContent;
         }
 
-        await MarkdownRenderer.renderMarkdown(
+        await MarkdownRenderer.render(
+            this.app,
             content,
             this.statblockEl.createDiv("markdown-rendered"),
             path,
-            null
+            this
         );
     }
 
